@@ -3,8 +3,11 @@ from fastapi.responses import JSONResponse
 from PIL import Image
 import io
 import numpy as np
+import easyocr
 
 app = FastAPI()
+
+reader = easyocr.Reader(['en'], gpu=False)
 
 def analyze_image_characteristics(image):
     """
@@ -49,11 +52,27 @@ async def detect_handwriting(file: UploadFile = File(...)):
         # Read and process the image
         image_data = await file.read()
         image = Image.open(io.BytesIO(image_data)).convert("RGB")
+        np_image = np.array(image)
+
+        # Use EasyOCR to detect text and script type
+        results = reader.readtext(np_image, detail=1)
+        scripts = set()
+        confidences = []
+        for bbox, text, conf in results:
+            # EasyOCR does not directly return script type, but we can infer from the model used
+            # For now, if any text is detected, assume printed (since EasyOCR is not trained for handwriting)
+            confidences.append(conf)
         
-        # Analyze the image
-        result = analyze_image_characteristics(image)
+        # If no text detected, fallback to 'printed' (or could be blank/unknown)
+        if not results:
+            return JSONResponse({"result": "printed", "confidence": 0.0})
         
-        return JSONResponse({"result": result, "confidence": 0.8})
+        # For demonstration, if average confidence is very low, maybe it's handwritten (not robust)
+        avg_conf = sum(confidences) / len(confidences) if confidences else 0.0
+        if avg_conf < 0.3:
+            return JSONResponse({"result": "handwritten", "confidence": avg_conf})
+        else:
+            return JSONResponse({"result": "printed", "confidence": avg_conf})
     except Exception as e:
         return JSONResponse(
             {"error": f"Failed to process image: {str(e)}"}, 
