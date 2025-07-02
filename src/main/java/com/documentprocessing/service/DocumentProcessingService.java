@@ -21,6 +21,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+import com.github.pemistahl.lingua.api.Language;
+import com.github.pemistahl.lingua.api.LanguageDetector;
+import com.github.pemistahl.lingua.api.LanguageDetectorBuilder;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -50,6 +53,7 @@ public class DocumentProcessingService {
 
     private final Tesseract tesseract;
     private static final double MIN_CONFIDENCE = 0.5;
+    private final LanguageDetector languageDetector;
 
     public DocumentProcessingService() {
         this.tesseract = new Tesseract();
@@ -62,6 +66,7 @@ public class DocumentProcessingService {
         tesseract.setDatapath("/opt/homebrew/Cellar/tesseract/5.5.1/share/tessdata");
         
         log.info("Tesseract OCR engine ready");
+        this.languageDetector = LanguageDetectorBuilder.fromAllLanguages().build();
     }
 
     public DrivingLicense processDocument(MultipartFile uploadedFile) throws Exception {
@@ -104,6 +109,11 @@ public class DocumentProcessingService {
             log.warn("No text found in document");
             return createFailedRecord(fileType, "No text extracted from document");
         }
+
+        // Language detection step
+        Language detectedLanguage = detectLanguage(rawText);
+        String langName = detectedLanguage != null ? detectedLanguage.getIsoCode639_1().name() : "unknown";
+        log.info("Detected language: {} (ISO 639-1: {})", detectedLanguage, langName);
 
         log.info("Extracted {} characters of text", rawText.length());
 
@@ -342,5 +352,10 @@ public class DocumentProcessingService {
 
     public String testHandwritingDetection(byte[] imageBytes) {
         return checkForHandwriting(imageBytes);
+    }
+
+    private Language detectLanguage(String text) {
+        if (text == null || text.trim().isEmpty()) return null;
+        return languageDetector.detectLanguageOf(text);
     }
 } 
