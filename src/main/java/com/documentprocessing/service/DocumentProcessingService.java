@@ -46,9 +46,6 @@ public class DocumentProcessingService {
     private DrivingLicenseService drivingLicenseService;
 
     @Autowired
-    private RealAIDocumentProcessingService realAIDocumentProcessingService;
-
-    @Autowired
     private OllamaAIDocumentProcessingService ollamaAIDocumentProcessingService;
 
     private final Tesseract tesseract;
@@ -130,44 +127,15 @@ public class DocumentProcessingService {
     }
 
     private Map<String, Object> extractLicenseData(String text) {
-        // Try Ollama first (local AI)
+        // Use only Ollama (local AI)
         Map<String, Object> ollamaResult = new HashMap<>();
         try {
             ollamaResult = ollamaAIDocumentProcessingService.extractDataWithOllama(text);
             log.info("Ollama extracted data with confidence: {}", ollamaResult.get("aiConfidence"));
         } catch (Exception e) {
-            log.warn("Ollama failed, trying OpenAI: {}", e.getMessage());
+            log.warn("Ollama failed: {}", e.getMessage());
         }
-
-        // Fallback to OpenAI if needed
-        Map<String, Object> openaiResult = new HashMap<>();
-        if (ollamaResult.isEmpty() || isLowConfidence(ollamaResult)) {
-            try {
-                openaiResult = realAIDocumentProcessingService.extractDataWithRealAI(text);
-                log.info("OpenAI extracted data with confidence: {}", openaiResult.get("aiConfidence"));
-            } catch (Exception e) {
-                log.warn("OpenAI also failed: {}", e.getMessage());
-            }
-        }
-
-        return pickBestResult(ollamaResult, openaiResult);
-    }
-
-    private boolean isLowConfidence(Map<String, Object> result) {
-        Object confidence = result.get("aiConfidence");
-        return confidence != null && (Double) confidence < MIN_CONFIDENCE;
-    }
-
-    private Map<String, Object> pickBestResult(Map<String, Object> ollama, Map<String, Object> openai) {
-        // Prefer the one with higher confidence
-        if (!ollama.isEmpty() && !openai.isEmpty()) {
-            double ollamaConf = ollama.get("aiConfidence") != null ? (Double) ollama.get("aiConfidence") : 0.0;
-            double openaiConf = openai.get("aiConfidence") != null ? (Double) openai.get("aiConfidence") : 0.0;
-            return ollamaConf >= openaiConf ? ollama : openai;
-        }
-        
-        // Return whichever one has data
-        return !ollama.isEmpty() ? ollama : openai;
+        return ollamaResult;
     }
 
     private DrivingLicense buildLicenseRecord(Map<String, Object> data, String fileType, boolean hasHandwriting) {

@@ -1,9 +1,0 @@
-/Users/vanshambashta/Projects/document-processing-app/src/main/java/com/documentprocessing/model/DrivingLicense.java
-/Users/vanshambashta/Projects/document-processing-app/src/main/java/com/documentprocessing/service/DrivingLicenseService.java
-/Users/vanshambashta/Projects/document-processing-app/src/main/java/com/documentprocessing/repository/DrivingLicenseRepository.java
-/Users/vanshambashta/Projects/document-processing-app/src/main/java/com/documentprocessing/DocumentProcessingApplication.java
-/Users/vanshambashta/Projects/document-processing-app/src/main/java/com/documentprocessing/controller/DocumentController.java
-/Users/vanshambashta/Projects/document-processing-app/src/main/java/com/documentprocessing/exception/GlobalExceptionHandler.java
-/Users/vanshambashta/Projects/document-processing-app/src/main/java/com/documentprocessing/service/RealAIDocumentProcessingService.java
-/Users/vanshambashta/Projects/document-processing-app/src/main/java/com/documentprocessing/service/DocumentProcessingService.java
-/Users/vanshambashta/Projects/document-processing-app/src/main/java/com/documentprocessing/service/OllamaAIDocumentProcessingService.java
